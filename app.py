@@ -7,11 +7,9 @@ from sklearn.ensemble import IsolationForest
 
 app = Flask(__name__)
 
-# Create logs folder
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
-# Setup application logger
 logger = logging.getLogger("app_logger")
 logger.setLevel(logging.INFO)
 
@@ -22,11 +20,13 @@ formatter = logging.Formatter(
 file_handler.setFormatter(formatter)    
 logger.addHandler(file_handler)
 
-# Disable Flask default logs
 werkzeug_log = logging.getLogger('werkzeug')
 werkzeug_log.setLevel(logging.ERROR)
 
 dashboard_html = """
+
+#Dashboard UI for AI Log Monitoring
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -215,7 +215,6 @@ def get_logs():
     except:
         return jsonify(["No logs yet"])
 
-# AI Log Analysis
 @app.route("/analyze")
 def analyze_logs():
     data = []
@@ -240,12 +239,10 @@ def analyze_logs():
 
     return redirect("/")
 
-# Health check endpoint (for Kubernetes auto-healing)
 @app.route("/health")
 def health():
     return "OK", 200
 
-# Metrics endpoint (for Prometheus later)
 @app.route("/metrics")
 def metrics():
     return jsonify({
