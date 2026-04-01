@@ -1,11 +1,13 @@
 #Open the Browser for the Dashboard: http://127.0.0.1:5000/
 from flask import Flask, jsonify, render_template_string, redirect
+from flask import Flask, jsonify, render_template_string, redirect, request, session
 import logging
 import random
 import os
 from sklearn.ensemble import IsolationForest
 
 app = Flask(__name__)
+app.secret_key = "secret123"
 
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -23,6 +25,29 @@ logger.addHandler(file_handler)
 werkzeug_log = logging.getLogger('werkzeug')
 werkzeug_log.setLevel(logging.ERROR)
 
+login_html = """
+<html>
+<head>
+<title>Login</title>
+<style>
+body { font-family: Arial; text-align:center; margin-top:100px; }
+input { padding:10px; margin:10px; }
+button { padding:10px 20px; }
+</style>
+</head>
+<body>
+<h2>AI Dashboard Login</h2>
+<form method="POST">
+<input name="username" placeholder="Username"><br>
+<input name="password" type="password" placeholder="Password"><br>
+<button type="submit">Login</button>
+</form>
+</body>
+</html>
+"""
+
+
+
 dashboard_html = """
 
 #Dashboard UI for AI Log Monitoring
@@ -32,7 +57,7 @@ dashboard_html = """
 <head>
 <title>AI Log Monitoring Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
-
+<a href="/logout">Logout</a>
 <style>
 body {
     margin: 0;
@@ -176,8 +201,22 @@ setInterval(loadMetrics,3000)
 </html>
 """
 
+USERNAME = "admin"
+PASSWORD = "admin123"
+
+@app.route("/login", methods=["GET","POST"])
+def login():
+    if request.method == "POST":
+        if request.form["username"] == USERNAME and request.form["password"] == PASSWORD:
+            session["user"] = USERNAME
+            return redirect("/")
+    return render_template_string(login_html)
+
+
 @app.route("/")
 def dashboard():
+    if "user" not in session:
+        return redirect("/login")
     return render_template_string(dashboard_html)
 
 services = ["Auth-Service", "Payment-Service", "API-Gateway", "Database", "AI-Service"]
@@ -250,6 +289,13 @@ def metrics():
         "memory_usage": random.randint(30,90),
         "error_rate": random.randint(0,10)
     })
+
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect("/login")
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
