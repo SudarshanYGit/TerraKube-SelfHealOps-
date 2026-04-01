@@ -1,5 +1,9 @@
 flask==3.0.0
 flask-cors==4.0.0
+<<<<<<< HEAD
 psutil==5.9.8
 scikit-learn==1.4.0
 numpy==1.26.4
+=======
+psutil==5.9.8
+>>>>>>> 86dbd14b103ea72c80e6350b65b603dae6d4f152

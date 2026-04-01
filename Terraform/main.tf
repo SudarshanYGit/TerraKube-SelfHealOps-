@@ -151,6 +151,7 @@ resource "aws_instance" "terrakube" {
     Project = "TerraKube-SelfHealOps"
   }
 }
+<<<<<<< HEAD
 resource "aws_eip" "terrakube_eip" {
   instance = aws_instance.terrakube.id
   domain   = "vpc"
@@ -160,3 +161,5 @@ resource "aws_eip" "terrakube_eip" {
     Project = "TerraKube-SelfHealOps"
   }
 }
+=======
+>>>>>>> 86dbd14b103ea72c80e6350b65b603dae6d4f152
