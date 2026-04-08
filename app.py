@@ -1,13 +1,11 @@
-#Open the Browser for the Dashboard: http://127.0.0.1:5000/
+# Open the Browser for the Dashboard: http://127.0.0.1:5000/
 from flask import Flask, jsonify, render_template_string, redirect
-from flask import Flask, jsonify, render_template_string, redirect, request, session
 import logging
 import random
 import os
 from sklearn.ensemble import IsolationForest
 
 app = Flask(__name__)
-app.secret_key = "secret123"
 
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -16,48 +14,20 @@ logger = logging.getLogger("app_logger")
 logger.setLevel(logging.INFO)
 
 file_handler = logging.FileHandler("logs/app.log")
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | %(message)s"
-)
-file_handler.setFormatter(formatter)    
+formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 werkzeug_log = logging.getLogger('werkzeug')
 werkzeug_log.setLevel(logging.ERROR)
 
-login_html = """
-<html>
-<head>
-<title>Login</title>
-<style>
-body { font-family: Arial; text-align:center; margin-top:100px; }
-input { padding:10px; margin:10px; }
-button { padding:10px 20px; }
-</style>
-</head>
-<body>
-<h2>AI Dashboard Login</h2>
-<form method="POST">
-<input name="username" placeholder="Username"><br>
-<input name="password" type="password" placeholder="Password"><br>
-<button type="submit">Login</button>
-</form>
-</body>
-</html>
-"""
-
-
 
 dashboard_html = """
-
-#Dashboard UI for AI Log Monitoring
-
 <!DOCTYPE html>
 <html>
 <head>
 <title>AI Log Monitoring Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
-<a href="/logout">Logout</a>
 <style>
 body {
     margin: 0;
@@ -150,74 +120,62 @@ AI Live-Log Monitoring Dashboard
 </div>
 
 <div class="metrics">
-<div class="metric-card">CPU Usage<br><h2 id="cpu">45%</h2></div>
-<div class="metric-card">Memory Usage<br><h2 id="memory">60%</h2></div>
-<div class="metric-card">Error Rate<br><h2 id="error">3%</h2></div>
+    <div class="metric-card">CPU Usage<br><h2 id="cpu">45%</h2></div>
+    <div class="metric-card">Memory Usage<br><h2 id="memory">60%</h2></div>
+    <div class="metric-card">Error Rate<br><h2 id="error">3%</h2></div>
 </div>
 
 <div class="cards">
-<div class="card"><h3>Login Service</h3><a href="/simulate/login"><button>Simulate Login</button></a></div>
-<div class="card"><h3>API Gateway</h3><a href="/simulate/api"><button>Send API Request</button></a></div>
-<div class="card"><h3>Payment</h3><a href="/simulate/payment"><button>Process Payment</button></a></div>
-<div class="card"><h3>Generate Error</h3><a href="/simulate/error"><button>Create Error</button></a></div>
-<div class="card"><h3>Crash Service</h3><a href="/simulate/crash"><button>Crash Container</button></a></div>
-<div class="card"><h3>AI Analyzer</h3><a href="/analyze"><button>Run AI Analysis</button></a></div>
+    <div class="card"><h3>Login Service</h3><a href="/simulate/login"><button>Simulate Login</button></a></div>
+    <div class="card"><h3>API Gateway</h3><a href="/simulate/api"><button>Send API Request</button></a></div>
+    <div class="card"><h3>Payment</h3><a href="/simulate/payment"><button>Process Payment</button></a></div>
+    <div class="card"><h3>Generate Error</h3><a href="/simulate/error"><button>Create Error</button></a></div>
+    <div class="card"><h3>Crash Service</h3><a href="/simulate/crash"><button>Crash Container</button></a></div>
+    <div class="card"><h3>AI Analyzer</h3><a href="/analyze"><button>Run AI Analysis</button></a></div>
 </div>
 
 <div class="logs" id="logs"></div>
 
 <script>
 function loadLogs(){
-fetch('/logs')
-.then(res => res.json())
-.then(data => {
-let html = "";
-data.forEach(line => {
-    if(line.includes("INFO")) html += "<div class='info'>" + line + "</div>";
-    else if(line.includes("WARNING")) html += "<div class='warning'>" + line + "</div>";
-    else if(line.includes("ERROR")) html += "<div class='error'>" + line + "</div>";
-    else if(line.includes("CRITICAL")) html += "<div class='critical'>" + line + "</div>";
-    else html += "<div>" + line + "</div>";
-});
-document.getElementById("logs").innerHTML = html;
-})
+    fetch('/logs')
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+        data.forEach(line => {
+            if(line.includes("INFO")) html += "<div class='info'>" + line + "</div>";
+            else if(line.includes("WARNING")) html += "<div class='warning'>" + line + "</div>";
+            else if(line.includes("ERROR")) html += "<div class='error'>" + line + "</div>";
+            else if(line.includes("CRITICAL")) html += "<div class='critical'>" + line + "</div>";
+            else html += "<div>" + line + "</div>";
+        });
+        document.getElementById("logs").innerHTML = html;
+    })
 }
 
 function loadMetrics(){
-fetch('/metrics')
-.then(res => res.json())
-.then(data => {
-document.getElementById("cpu").innerText = data.cpu_usage + "%";
-document.getElementById("memory").innerText = data.memory_usage + "%";
-document.getElementById("error").innerText = data.error_rate + "%";
-})
+    fetch('/metrics')
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("cpu").innerText = data.cpu_usage + "%";
+        document.getElementById("memory").innerText = data.memory_usage + "%";
+        document.getElementById("error").innerText = data.error_rate + "%";
+    })
 }
 
-setInterval(loadLogs,2000)
-setInterval(loadMetrics,3000)
+setInterval(loadLogs, 2000)
+setInterval(loadMetrics, 3000)
 </script>
 
 </body>
 </html>
 """
 
-USERNAME = "admin"
-PASSWORD = "admin123"
-
-@app.route("/login", methods=["GET","POST"])
-def login():
-    if request.method == "POST":
-        if request.form["username"] == USERNAME and request.form["password"] == PASSWORD:
-            session["user"] = USERNAME
-            return redirect("/")
-    return render_template_string(login_html)
-
 
 @app.route("/")
 def dashboard():
-    if "user" not in session:
-        return redirect("/login")
     return render_template_string(dashboard_html)
+
 
 services = ["Auth-Service", "Payment-Service", "API-Gateway", "Database", "AI-Service"]
 
@@ -229,7 +187,7 @@ def simulate(event):
         logger.info(f"{service} | User login successful")
 
     elif event == "api":
-        response_time = random.randint(100,2000)
+        response_time = random.randint(100, 2000)
         logger.info(f"{service} | API response time {response_time}ms")
         if response_time > 1500:
             logger.warning(f"{service} | High latency detected")
@@ -245,6 +203,7 @@ def simulate(event):
 
     return redirect("/")
 
+
 @app.route("/logs")
 def get_logs():
     try:
@@ -253,6 +212,7 @@ def get_logs():
         return jsonify(lines)
     except:
         return jsonify(["No logs yet"])
+
 
 @app.route("/analyze")
 def analyze_logs():
@@ -273,28 +233,23 @@ def analyze_logs():
     preds = model.predict(data)
 
     anomalies = preds.tolist().count(-1)
-
     logger.warning(f"AI detected {anomalies} anomalies")
 
     return redirect("/")
+
 
 @app.route("/health")
 def health():
     return "OK", 200
 
+
 @app.route("/metrics")
 def metrics():
     return jsonify({
-        "cpu_usage": random.randint(20,80),
-        "memory_usage": random.randint(30,90),
-        "error_rate": random.randint(0,10)
+        "cpu_usage": random.randint(20, 80),
+        "memory_usage": random.randint(30, 90),
+        "error_rate": random.randint(0, 10)
     })
-
-
-@app.route("/logout")
-def logout():
-    session.pop("user", None)
-    return redirect("/login")
 
 
 if __name__ == "__main__":
